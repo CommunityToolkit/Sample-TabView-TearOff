@@ -4,42 +4,29 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
     Style="{StaticResource PageStyle}"
     mc:Ignorable="d">
 
-    <Grid x:Name="ContentArea">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="48"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <TextBlock
-            Grid.Row="0"
-            x:Uid="Main_Title"
-            Style="{StaticResource PageTitleStyle}" />
-
-        <Pivot
-            Grid.Row="1"
-            x:Name="Items">
-            <PivotItem x:Uid="Main_PivotItem1">
-                <Grid Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
-                    <!--
-                    The SystemControlPageBackgroundChromeLowBrush background represents where you should place your content. 
-                    Place your content here.
-                    -->
-
-                </Grid>
-            </PivotItem>
-
-            <PivotItem x:Uid="Main_PivotItem2">
-                <Grid Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
-                    <!--
-                    The SystemControlPageBackgroundChromeLowBrush background represents where you should place your content. 
-                    Place your content here.
-                    -->
-
-                </Grid>
-            </PivotItem>
-        </Pivot>
-    </Grid>
+    <controls:TabView
+            TabWidthBehavior="Equal"
+            SelectedTabWidth="200"
+            x:Name="Items"
+            ItemsSource="{x:Bind TabItems}">
+        <controls:TabView.Resources>
+            <x:Double x:Key="TabViewItemHeaderMinWidth">90</x:Double>
+        </controls:TabView.Resources>
+        <controls:TabView.ItemHeaderTemplate>
+            <DataTemplate>
+                <TextBlock Text="{Binding Title}"/>
+            </DataTemplate>
+        </controls:TabView.ItemHeaderTemplate>
+        <controls:TabView.ItemTemplate>
+            <DataTemplate>
+                <TextBlock Text="{Binding Content}"
+                           Margin="16"
+                           TextWrapping="WrapWholeWords"/>
+            </DataTemplate>
+        </controls:TabView.ItemTemplate>
+    </controls:TabView>
 </Page>

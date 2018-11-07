@@ -36,9 +36,9 @@ namespace TabViewTear.Services
 
         // Displays a view as a standalone
         // You can use the resulting ViewLifeTileControl to interact with the new window.
-        public async Task<ViewLifetimeControl> TryShowAsStandaloneAsync(string windowTitle, Type pageType)
+        public async Task<ViewLifetimeControl> TryShowAsStandaloneAsync(string windowTitle, Type pageType, string dataContext = null)
         {
-            ViewLifetimeControl viewControl = await CreateViewLifetimeControlAsync(windowTitle, pageType);
+            ViewLifetimeControl viewControl = await CreateViewLifetimeControlAsync(windowTitle, pageType, dataContext);
             SecondaryViews.Add(viewControl);
             viewControl.StartViewInUse();
             var viewShown = await ApplicationViewSwitcher.TryShowAsStandaloneAsync(viewControl.Id, ViewSizePreference.Default, ApplicationView.GetForCurrentView().Id, ViewSizePreference.Default);
@@ -57,7 +57,7 @@ namespace TabViewTear.Services
             return viewControl;
         }
 
-        private async Task<ViewLifetimeControl> CreateViewLifetimeControlAsync(string windowTitle, Type pageType)
+        private async Task<ViewLifetimeControl> CreateViewLifetimeControlAsync(string windowTitle, Type pageType, string dataContext = null)
         {
             ViewLifetimeControl viewControl = null;
 
@@ -65,6 +65,7 @@ namespace TabViewTear.Services
             {
                 viewControl = ViewLifetimeControl.CreateForCurrentView();
                 viewControl.Title = windowTitle;
+                viewControl.Context = dataContext;
                 viewControl.StartViewInUse();
                 var frame = new Frame();
                 frame.RequestedTheme = ThemeSelectorService.Theme;

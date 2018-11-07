@@ -28,7 +28,11 @@ namespace TabViewTear.Services
         // This id is used in all of the ApplicationViewSwitcher and ProjectionManager APIs
         public int Id { get; private set; }
 
+        // Initial title for the window
         public string Title { get; set; }
+
+        // Optional context to provide from window opener
+        public string Context { get; set; }
 
         public event ViewReleasedHandler Released
         {

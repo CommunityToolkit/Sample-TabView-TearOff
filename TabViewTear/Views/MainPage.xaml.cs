@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using TabViewTear.Models;
 using TabViewTear.Services;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -16,6 +17,11 @@ namespace TabViewTear.Views
 {
     public sealed partial class MainPage : Page, INotifyPropertyChanged
     {
+        private const string DataIdentifier = "TabData";
+        private const string DataIndex = "TabIndex";
+        private const string DataWindow = "TabWindow";
+        private const string CommandClose = "Close";
+
         ObservableCollection<DataItem> TabItems = new ObservableCollection<DataItem>();
 
         public MainPage()
@@ -26,6 +32,8 @@ namespace TabViewTear.Views
         public event PropertyChangedEventHandler PropertyChanged;
 
         private ViewLifetimeControl _viewLifetimeControl;
+
+        #region Handle Window Lifetime
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
@@ -36,6 +44,7 @@ namespace TabViewTear.Views
                 _viewLifetimeControl.StartViewInUse();
                 // Register for window close
                 _viewLifetimeControl.Released += OnViewLifetimeControlReleased;
+                _viewLifetimeControl.MessageReceived += OnViewLifetimeControlMessageReceived;
                 // Deserialize passed in item to display in this window
                 TabItems.Add(JsonConvert.DeserializeObject<DataItem>(_viewLifetimeControl.Context.ToString()));
                 _viewLifetimeControl.Context = null;
@@ -45,7 +54,16 @@ namespace TabViewTear.Views
             {
                 // Main Window Start
                 InitializeTestData();
+
+                WindowManagerService.Current.MainWindowMessageReceived += OnViewLifetimeControlMessageReceived;
             }
+        }
+
+        private MessageEventArgs _lastMsg;
+
+        private async void OnViewLifetimeControlMessageReceived(object sender, MessageEventArgs e)
+        {
+            _lastMsg = e; // Store to complete in DragItemsCompleted.
         }
 
         private async void OnViewLifetimeControlReleased(object sender, EventArgs e)
@@ -56,7 +74,9 @@ namespace TabViewTear.Views
                 WindowManagerService.Current.SecondaryViews.Remove(_viewLifetimeControl);
             });
         }
+        #endregion
 
+        #region Handle Dragging Tab to Create Window
         private async void Items_TabDraggedOutside(object sender, Microsoft.Toolkit.Uwp.UI.Controls.TabDraggedOutsideEventArgs e)
         {
             if (e.Item is DataItem data)
@@ -69,12 +89,15 @@ namespace TabViewTear.Views
 
                 if (TabItems.Count == 0)
                 {
+                    // TODO: If drag wasn't received by another window and last tab, ignore?
                     // No tabs left on main window, 'switch' to window just created to hide the main view
                     await ApplicationViewSwitcher.SwitchAsync(lifetimecontrol.Id, ApplicationView.GetForCurrentView().Id, ApplicationViewSwitchingOptions.ConsolidateViews);
                 }
             }
         }
+        #endregion
 
+        #region Handle Tab Change Updating Window Title
         private void Items_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // Update window title with current item
@@ -84,6 +107,100 @@ namespace TabViewTear.Views
                 ApplicationView.GetForCurrentView().Title = data.Title;
             }
         }
+        #endregion
+
+        #region Handle Dragging Tabs between windows
+        private void Items_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
+        {
+            // In Initial Window we need to serialize our tab data.
+            var item = e.Items.FirstOrDefault();
+
+            if (item is DataItem data)
+            {
+                // Add actual data
+                e.Data.Properties.Add(DataIdentifier, JsonConvert.SerializeObject(data));
+                // Add our index so we know where to remove from later (if needed)
+                e.Data.Properties.Add(DataIndex, Items.IndexFromContainer(Items.ContainerFromItem(data)));
+                // Add Window Id to know if we're transferring to a different window.
+                e.Data.Properties.Add(DataWindow, ApplicationView.GetForCurrentView().Id);
+            }
+        }
+
+        private void Items_DragOver(object sender, DragEventArgs e)
+        {
+            // Called before we drop to see if we will accept a drop.
+
+            // Do we have Tab Data?
+            if (e.DataView.Properties.ContainsKey(DataIdentifier))
+            {
+                // Tell OS that we allow moving item.
+                e.AcceptedOperation = DataPackageOperation.Move;
+            }
+        }
+
+        private void Items_Drop(object sender, DragEventArgs e)
+        {
+            // Called when we actually get the drop, let's get the data and add our tab.
+            var pos = e.GetPosition(this);
+
+            if (e.DataView.Properties.TryGetValue(DataIdentifier, out object value) && value is string str)
+            {
+                var data = JsonConvert.DeserializeObject<DataItem>(str);
+
+                if (data != null)
+                {
+                    //var minpos = pos;
+                    //var mindist = 1000.0;
+                    //var minindex = -1;
+                    //foreach (var item in Items.Items)
+                    //{
+                    //    var tab = Items.ContainerFromItem(item);
+                    //    var p = e.GetPosition(tab as UIElement);
+                    //    var amt = Math.Abs(p.X - minpos.X) + Math.Abs(p.Y - minpos.Y);
+                    //    if (amt < mindist)
+                    //    {
+                    //        minindex = Items.IndexFromContainer(tab);
+                    //        mindist = amt;
+                    //        minpos = p;
+                    //    }
+                    //}
+
+
+                    // TODO: Figure out how to insert this in the right place.
+                    TabItems.Add(data);
+
+                    Items.SelectedItem = data; // Select new item.
+
+                    // Send message to origintator to remove the tab.
+                    WindowManagerService.Current.SendMessage((e.DataView.Properties[DataWindow] as int?).Value, CommandClose, e.DataView.Properties[DataIndex]);
+                }
+            }
+        }
+
+        private async void Items_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        {
+            if (args.DropResult == DataPackageOperation.Move && _lastMsg != null)
+            {
+                switch (_lastMsg.Message)
+                {
+                    case CommandClose:
+                        if (_lastMsg.Data is int value)
+                        {
+                            TabItems.RemoveAt(value);
+
+                            if (TabItems.Count == 0)
+                            {
+                                // No tabs left on main window, 'switch' to window just created to hide the main view
+                                await ApplicationViewSwitcher.SwitchAsync(_lastMsg.FromId, ApplicationView.GetForCurrentView().Id, ApplicationViewSwitchingOptions.ConsolidateViews);
+                            }
+                        }
+
+                        _lastMsg = null;
+                        break;
+                }
+            }
+        }
+        #endregion
 
         private void Set<T>(ref T storage, T value, [CallerMemberName]string propertyName = null)
         {

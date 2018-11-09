@@ -34,6 +34,8 @@ namespace TabViewTear.Services
         // Optional context to provide from window opener
         public string Context { get; set; }
 
+        public event EventHandler<MessageEventArgs> MessageReceived;
+
         public event ViewReleasedHandler Released
         {
             add
@@ -74,6 +76,11 @@ namespace TabViewTear.Services
         public static ViewLifetimeControl CreateForCurrentView()
         {
             return new ViewLifetimeControl(CoreWindow.GetForCurrentThread());
+        }
+
+        public void SendMessage(string message, int fromid, object data = null)
+        {
+            MessageReceived?.Invoke(this, new MessageEventArgs(fromid, Id, message, data));
         }
 
         // Signals that the view is being interacted with by another view,

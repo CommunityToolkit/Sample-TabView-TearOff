@@ -28,6 +28,8 @@ namespace TabViewTear.Services
 
         public CoreDispatcher MainDispatcher { get; private set; }
 
+        public event EventHandler<MessageEventArgs> MainWindowMessageReceived;
+
         public void Initialize()
         {
             MainViewId = ApplicationView.GetForCurrentView().Id;
@@ -79,5 +81,21 @@ namespace TabViewTear.Services
         }
 
         public bool IsWindowOpen(string windowTitle) => SecondaryViews.Any(v => v.Title == windowTitle);
+
+        public ViewLifetimeControl GetWindowById(int id) => SecondaryViews.FirstOrDefault(v => v.Id == id);
+
+        public void SendMessage(int toid, string message, object data = null)
+        {
+            if (toid == MainViewId)
+            {
+                // Special case for main window
+                MainWindowMessageReceived?.Invoke(this, new MessageEventArgs(ApplicationView.GetForCurrentView().Id, toid, message, data));
+            }
+            else
+            {
+                // Any secondary window
+                GetWindowById(toid)?.SendMessage(message, ApplicationView.GetForCurrentView().Id, data);
+            }
+        }
     }
 }

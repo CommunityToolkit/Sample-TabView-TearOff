@@ -122,6 +122,7 @@
     <Compile Include="Services\DragAndDrop\DropConfiguration.cs" />
     <Compile Include="Services\DragAndDrop\ListViewDropConfiguration.cs" />
     <Compile Include="Services\DragAndDrop\VisualDropConfiguration.cs" />
+    <Compile Include="Services\MessageEventArgs.cs" />
     <Compile Include="Services\NavigationService.cs" />
     <Compile Include="Services\ThemeSelectorService.cs" />
     <Compile Include="Services\ViewLifetimeControl.cs" />

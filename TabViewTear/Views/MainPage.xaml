@@ -9,14 +9,18 @@
     mc:Ignorable="d">
 
     <controls:TabView
+            x:Name="Items"
             TabWidthBehavior="Equal"
             SelectedTabWidth="200"
-            x:Name="Items"
             CanDragItems="True"
             CanReorderItems="True"
             AllowDrop="True"
             TabDraggedOutside="Items_TabDraggedOutside"
             SelectionChanged="Items_SelectionChanged"
+            DragItemsStarting="Items_DragItemsStarting"
+            DragItemsCompleted="Items_DragItemsCompleted"
+            DragOver="Items_DragOver"
+            Drop="Items_Drop"
             ItemsSource="{x:Bind TabItems}">
         <controls:TabView.Resources>
             <x:Double x:Key="TabViewItemHeaderMinWidth">90</x:Double>

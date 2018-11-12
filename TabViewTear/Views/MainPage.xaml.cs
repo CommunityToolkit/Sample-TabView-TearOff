@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Toolkit.Uwp.UI.Controls;
+using Newtonsoft.Json;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -61,7 +62,7 @@ namespace TabViewTear.Views
 
         private MessageEventArgs _lastMsg;
 
-        private async void OnViewLifetimeControlMessageReceived(object sender, MessageEventArgs e)
+        private void OnViewLifetimeControlMessageReceived(object sender, MessageEventArgs e)
         {
             _lastMsg = e; // Store to complete in DragItemsCompleted.
         }
@@ -149,25 +150,34 @@ namespace TabViewTear.Views
 
                 if (data != null)
                 {
-                    //var minpos = pos;
-                    //var mindist = 1000.0;
-                    //var minindex = -1;
-                    //foreach (var item in Items.Items)
-                    //{
-                    //    var tab = Items.ContainerFromItem(item);
-                    //    var p = e.GetPosition(tab as UIElement);
-                    //    var amt = Math.Abs(p.X - minpos.X) + Math.Abs(p.Y - minpos.Y);
-                    //    if (amt < mindist)
-                    //    {
-                    //        minindex = Items.IndexFromContainer(tab);
-                    //        mindist = amt;
-                    //        minpos = p;
-                    //    }
-                    //}
+                    // First we need to get the position in the List to drop to
+                    var listview = sender as TabView;
+                    var index = -1;
 
+                    // Determine which items in the list our pointer is inbetween.
+                    for (int i = 0; i < listview.Items.Count; i++)
+                    {
+                        var item = listview.ContainerFromIndex(i) as TabViewItem;
 
-                    // TODO: Figure out how to insert this in the right place.
-                    TabItems.Add(data);
+                        var p = e.GetPosition(item);
+
+                        if (p.X - item.ActualWidth < 0)
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if (index < 0)
+                    {
+                        // We didn't find a transition point, so we're at the end of the list
+                        TabItems.Add(data);
+                    }
+                    else if (index < listview.Items.Count)
+                    {
+                        // Otherwise, insert at the provided index.
+                        TabItems.Insert(index, data);
+                    }                    
 
                     Items.SelectedItem = data; // Select new item.
 
@@ -236,6 +246,16 @@ namespace TabViewTear.Views
             {
                 Title = "Item 4",
                 Content = "Nullam sollicitudin magna dui, imperdiet vulputate arcu pharetra eu. Vivamus lobortis lectus ut diam pretium, ut fermentum est malesuada. Sed eget pretium nisi. Cras eget vestibulum purus. Vivamus tincidunt luctus maximus. Cras erat enim, molestie sit amet tortor sit amet, porttitor tincidunt neque. Nam malesuada odio justo, sed sagittis tellus mollis in. Proin congue enim quis libero faucibus, eu condimentum dolor convallis. Mauris blandit ipsum sit amet maximus convallis. Integer porta dolor id purus hendrerit, a semper mi blandit. In malesuada lacus a tellus interdum, vel consequat turpis molestie. Curabitur eget venenatis massa."
+            });
+            TabItems.Add(new DataItem()
+            {
+                Title = "Item 5",
+                Content = "Etiam egestas, tellus ut molestie cursus, odio eros accumsan nulla, ut tempor libero nisi a ante. Sed posuere, velit id dictum lobortis, magna lorem dapibus urna, vitae mattis tellus libero et ligula. Praesent vel orci vehicula, accumsan ipsum ac, venenatis erat. Vestibulum consequat nulla eget arcu accumsan, tempus condimentum nulla euismod. Cras mattis tellus tortor, vitae vulputate lectus vulputate ac. Nunc nisl est, porttitor vitae diam a, pulvinar faucibus augue. Morbi vitae bibendum sem, non porta dolor. Cras turpis sem, rhoncus eget ultrices a, pretium venenatis libero. Fusce convallis eu sapien eu imperdiet. Nullam pulvinar ante a lobortis commodo. Aenean at est vel est faucibus efficitur in eget turpis. In efficitur bibendum dolor vitae dapibus. Mauris dapibus risus sit amet lectus ornare, et eleifend urna pretium. Integer non semper nibh, sit amet bibendum nulla. Nulla facilisi."
+            });
+            TabItems.Add(new DataItem()
+            {
+                Title = "Item 6",
+                Content = "Integer in pulvinar justo, non venenatis leo. Nam quis pulvinar libero, id laoreet elit. Nunc vehicula vitae lectus et venenatis. Etiam et porta dui. Nulla rutrum lacinia dolor. Nullam convallis libero eget nisi tristique, quis convallis enim finibus. Suspendisse consectetur lorem eleifend sem venenatis ultrices. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nunc ligula urna, aliquam vitae est a, dictum gravida nulla. Sed eu vestibulum nisl. Phasellus rhoncus volutpat mauris, vitae semper quam molestie et. Fusce mattis turpis a congue maximus. Suspendisse justo dui, varius non metus vel, euismod pretium velit."
             });
         }
     }

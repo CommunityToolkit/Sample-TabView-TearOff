@@ -34,6 +34,8 @@ namespace TabViewTear.Views
 
         private ViewLifetimeControl _viewLifetimeControl;
 
+        private MessageEventArgs _lastMsg;
+
         #region Handle Window Lifetime
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -58,13 +60,6 @@ namespace TabViewTear.Views
 
                 WindowManagerService.Current.MainWindowMessageReceived += OnViewLifetimeControlMessageReceived;
             }
-        }
-
-        private MessageEventArgs _lastMsg;
-
-        private void OnViewLifetimeControlMessageReceived(object sender, MessageEventArgs e)
-        {
-            _lastMsg = e; // Store to complete in DragItemsCompleted.
         }
 
         private async void OnViewLifetimeControlReleased(object sender, EventArgs e)
@@ -187,8 +182,14 @@ namespace TabViewTear.Views
             }
         }
 
+        private void OnViewLifetimeControlMessageReceived(object sender, MessageEventArgs e)
+        {
+            _lastMsg = e; // Store to complete in DragItemsCompleted.
+        }
+
         private async void Items_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
+            // Remove tab from old window after drag completed, if done when message received, item is not 'back' yet from drag processing.
             if (args.DropResult == DataPackageOperation.Move && _lastMsg != null)
             {
                 switch (_lastMsg.Message)

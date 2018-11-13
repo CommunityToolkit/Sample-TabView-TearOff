@@ -75,20 +75,13 @@ namespace TabViewTear.Views
         #region Handle Dragging Tab to Create Window
         private async void Items_TabDraggedOutside(object sender, Microsoft.Toolkit.Uwp.UI.Controls.TabDraggedOutsideEventArgs e)
         {
-            if (e.Item is DataItem data)
+            if (e.Item is DataItem data && TabItems.Count > 1) // Don't bother creating a new window if we're the last tab, no-op.
             {
                 // Need to serialize item to better provide transfer across window threads.
                 var lifetimecontrol = await WindowManagerService.Current.TryShowAsStandaloneAsync(data.Title, typeof(MainPage), JsonConvert.SerializeObject(data));
 
                 // Remove Dragged Tab from this window
                 TabItems.Remove(data);
-
-                if (TabItems.Count == 0)
-                {
-                    // TODO: If drag wasn't received by another window and last tab, ignore?
-                    // No tabs left on main window, 'switch' to window just created to hide the main view
-                    await ApplicationViewSwitcher.SwitchAsync(lifetimecontrol.Id, ApplicationView.GetForCurrentView().Id, ApplicationViewSwitchingOptions.ConsolidateViews);
-                }
             }
         }
         #endregion
@@ -137,8 +130,6 @@ namespace TabViewTear.Views
         private void Items_Drop(object sender, DragEventArgs e)
         {
             // Called when we actually get the drop, let's get the data and add our tab.
-            var pos = e.GetPosition(this);
-
             if (e.DataView.Properties.TryGetValue(DataIdentifier, out object value) && value is string str)
             {
                 var data = JsonConvert.DeserializeObject<DataItem>(str);
@@ -154,9 +145,7 @@ namespace TabViewTear.Views
                     {
                         var item = listview.ContainerFromIndex(i) as TabViewItem;
 
-                        var p = e.GetPosition(item);
-
-                        if (p.X - item.ActualWidth < 0)
+                        if (e.GetPosition(item).X - item.ActualWidth < 0)
                         {
                             index = i;
                             break;
@@ -176,7 +165,7 @@ namespace TabViewTear.Views
 
                     Items.SelectedItem = data; // Select new item.
 
-                    // Send message to origintator to remove the tab.
+                    // Send message to originator to remove the tab.
                     WindowManagerService.Current.SendMessage((e.DataView.Properties[DataWindow] as int?).Value, CommandClose, e.DataView.Properties[DataIndex]);
                 }
             }

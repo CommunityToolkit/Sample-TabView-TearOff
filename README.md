@@ -13,6 +13,16 @@ Dependencies
 - [Windows Community Toolkit 5.0](https://github.com/windows-toolkit/WindowsCommunityToolkit/)
 - [Json.NET](https://www.newtonsoft.com/json)
 
+Considerations
+--------------
+1. Each Window runs its own Thread, this has implications on data transfer, Window messaging, and UI Page/Control construction.
+
+2. When constructing a new Window, it needs it's own UI shell to be reconstructed.
+
+3. This samples assumes the implementor will be using a collection of custom data items bound to the TabView.
+
+4. This sample assumes all Windows are managed by the same process and shares the same implementation for each Window.
+
 Known Issues
 ------------
 1. Dragging a tab to another monitor/position doesn't open the window on the other monitor/position.

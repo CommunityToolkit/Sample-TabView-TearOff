@@ -31,7 +31,7 @@ Known Issues
 
 2. The right-most tab will disappear when dragging a tab to another window.
 
-    This is a known bug which needs to be resolved in the TabView control, see Issue #(TODO: Link).
+    This is a known bug which needs to be resolved in the TabView control, see [Issue #2670](https://github.com/windows-toolkit/WindowsCommunityToolkit/issues/2670).
 
 About the Sample
 ----------------

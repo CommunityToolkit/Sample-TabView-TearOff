@@ -5,11 +5,88 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
+    xmlns:animations="using:Microsoft.Toolkit.Uwp.UI.Animations"
+    xmlns:Windows10version1803="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 6)"
+    xmlns:model="using:TabViewTear.Models"
     Style="{StaticResource PageStyle}"
     mc:Ignorable="d">
 
-    <controls:TabView
+    <Page.Resources>
+        <animations:AnimationCollection x:Key="TitleShowAnimation">
+            <animations:TranslationAnimation Duration="0:0:0.3" From="0, -200, 0" To="0" ></animations:TranslationAnimation>
+            <animations:OpacityAnimation Duration="0:0:0.3" From="0" To="1.0"></animations:OpacityAnimation>
+        </animations:AnimationCollection>
+    </Page.Resources>
+
+    <Grid Windows10version1803:KeyboardAcceleratorPlacementMode="Hidden">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator
+                            Modifiers="None"
+                            Key="F11"
+                            Invoked="AppFullScreenShortcut"/>
+        </Grid.KeyboardAccelerators>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="FullScreenStates">
+                <VisualState x:Name="Default">
+                    <VisualState.Setters>
+                        <Setter Target="AppTitleBar.Background" Value="Transparent"/>
+                        <Setter Target="ContentPresenter.(Grid.Row)" Value="1" />
+                        <Setter Target="ContentPresenter.(Grid.RowSpan)" Value="1" />
+                        <Setter Target="FullScreenButton.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="FullScreen">
+                    <VisualState.Setters>
+                        <Setter Target="AppTitleBar.Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+                        <Setter Target="ContentPresenter.(Grid.Row)" Value="0" />
+                        <Setter Target="ContentPresenter.(Grid.RowSpan)" Value="2" />
+                        <Setter Target="FullScreenButton.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                    <VisualState.StateTriggers>
+                        <StateTrigger IsActive="{x:Bind IsFullScreen, Mode=OneWay}"/>
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding Width, ElementName=LeftPaddingColumn}"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="{Binding Width, ElementName=RightPaddingColumn}"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Our main content, we'll move this up in the grid when we're fullscreen with the VSM above. -->
+        <ContentPresenter x:Name="ContentPresenter" Grid.Row="1" Grid.ColumnSpan="3" Content="{x:Bind ((model:DataItem)Items.SelectedItem).Content, Mode=OneWay}">
+            <ContentPresenter.ContentTemplate>
+                <DataTemplate>
+                    <TextBlock Margin="16" Text="{Binding}" TextWrapping="WrapWholeWords"/>
+                </DataTemplate>
+            </ContentPresenter.ContentTemplate>
+        </ContentPresenter>
+
+        <!-- This is a 'dummy' blank area to actually capture mouse events that are needed to drag the window around. -->
+        <Grid x:Name="AppTitleBar"
+              Background="Transparent"
+              Grid.ColumnSpan="3"
+              animations:Implicit.ShowAnimations="{StaticResource TitleShowAnimation}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftPaddingColumn" Width="0"/>
+                <ColumnDefinition/>
+                <ColumnDefinition x:Name="RightPaddingColumn" Width="0"/>
+            </Grid.ColumnDefinitions>
+        </Grid>
+        
+        <controls:TabView
             x:Name="Items"
+            Grid.Column="1"
+            Background="Transparent" 
+            animations:Implicit.ShowAnimations="{StaticResource TitleShowAnimation}"
             TabWidthBehavior="Equal"
             SelectedTabWidth="200"
             CanDragItems="True"
@@ -22,20 +99,29 @@
             DragOver="Items_DragOver"
             Drop="Items_Drop"
             ItemsSource="{x:Bind TabItems}">
-        <controls:TabView.Resources>
-            <x:Double x:Key="TabViewItemHeaderMinWidth">90</x:Double>
-        </controls:TabView.Resources>
-        <controls:TabView.ItemHeaderTemplate>
-            <DataTemplate>
-                <TextBlock Text="{Binding Title}"/>
-            </DataTemplate>
-        </controls:TabView.ItemHeaderTemplate>
-        <controls:TabView.ItemTemplate>
-            <DataTemplate>
-                <TextBlock Text="{Binding Content}"
-                           Margin="16"
-                           TextWrapping="WrapWholeWords"/>
-            </DataTemplate>
-        </controls:TabView.ItemTemplate>
-    </controls:TabView>
+            <controls:TabView.Resources>
+                <x:Double x:Key="TabViewItemHeaderMinHeight">32</x:Double>
+                <x:Double x:Key="TabViewItemHeaderMinWidth">90</x:Double>
+            </controls:TabView.Resources>
+            <controls:TabView.TabStartHeader>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" IsHitTestVisible="False">
+                    <Image Source="ms-appx:///Assets/Square44x44Logo.png" Width="20" Height="20" Margin="12,0"/>
+                    <TextBlock Text="TabView Sample" Style="{StaticResource CaptionTextBlockStyle}" Margin="0,8,24,0"/>
+                </StackPanel>
+            </controls:TabView.TabStartHeader>
+            <controls:TabView.ItemHeaderTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Title}"/>
+                </DataTemplate>
+            </controls:TabView.ItemHeaderTemplate>
+            <controls:TabView.ItemTemplate>
+                <DataTemplate/>
+            </controls:TabView.ItemTemplate>
+            <controls:TabView.TabEndHeader>
+                <Button x:Name="FullScreenButton" Click="Button_FullScreen_Click" Style="{StaticResource ButtonRevealStyle}" Background="Transparent">
+                    <FontIcon Glyph="&#xE1D9;" FontFamily="Segoe MDL2 Assets"/>
+                </Button>
+            </controls:TabView.TabEndHeader>
+        </controls:TabView>
+    </Grid>
 </Page>

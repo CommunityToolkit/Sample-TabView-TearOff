@@ -7,11 +7,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using TabViewTear.Models;
 using TabViewTear.Services;
+using Windows.ApplicationModel.Core;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
 
 namespace TabViewTear.Views
@@ -25,9 +27,36 @@ namespace TabViewTear.Views
 
         ObservableCollection<DataItem> TabItems = new ObservableCollection<DataItem>();
 
+        public bool IsFullScreen
+        {
+            get { return (bool)GetValue(IsFullScreenProperty); }
+            set { SetValue(IsFullScreenProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for IsFullScreen.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty IsFullScreenProperty =
+            DependencyProperty.Register(nameof(IsFullScreen), typeof(bool), typeof(MainPage), new PropertyMetadata(false));
+
         public MainPage()
         {
             InitializeComponent();
+
+            // Hide default title bar.
+            // https://docs.microsoft.com/en-us/windows/uwp/design/shell/title-bar
+            var coreTitleBar = CoreApplication.GetCurrentView().TitleBar;
+            coreTitleBar.ExtendViewIntoTitleBar = true;
+
+            // Register for changes
+            coreTitleBar.LayoutMetricsChanged += this.CoreTitleBar_LayoutMetricsChanged;
+            CoreTitleBar_LayoutMetricsChanged(coreTitleBar, null);
+
+            coreTitleBar.IsVisibleChanged += this.CoreTitleBar_IsVisibleChanged;
+
+            // Set XAML element as draggable region.
+            Window.Current.SetTitleBar(AppTitleBar);
+
+            // Listen for Fullscreen Changes from Shift+Win+Enter or our F11 shortcut
+            ApplicationView.GetForCurrentView().VisibleBoundsChanged += this.MainPage_VisibleBoundsChanged;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -199,6 +228,55 @@ namespace TabViewTear.Views
                         break;
                 }
             }
+        }
+        #endregion
+
+        #region Handle App TitleBar
+        private void CoreTitleBar_IsVisibleChanged(CoreApplicationViewTitleBar sender, object args)
+        {
+            // Adjust our content based on the Titlebar's visibility
+            // This is used when fullscreen to hide/show the titlebar when the mouse is near the top of the window automatically.
+            Items.Visibility = sender.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+            AppTitleBar.Visibility = Items.Visibility;
+        }
+
+        private void MainPage_VisibleBoundsChanged(ApplicationView sender, object args)
+        {
+            // Update Fullscreen from other modes of adjusting view (keyboard shortcuts)
+            IsFullScreen = ApplicationView.GetForCurrentView().IsFullScreenMode;
+        }
+
+        private void CoreTitleBar_LayoutMetricsChanged(CoreApplicationViewTitleBar sender, object args)
+        {
+            // Get the size of the caption controls area and back button 
+            // (returned in logical pixels), and move your content around as necessary.
+            LeftPaddingColumn.Width = new GridLength(sender.SystemOverlayLeftInset);
+            RightPaddingColumn.Width = new GridLength(sender.SystemOverlayRightInset);
+
+            // Update title bar control size as needed to account for system size changes.
+            AppTitleBar.Height = sender.Height;
+        }
+        #endregion
+
+        #region Handle FullScreen
+        private void AppFullScreenShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            // Toggle FullScreen from F11 Keyboard Shortcut
+            if (!IsFullScreen)
+            {
+                IsFullScreen = ApplicationView.GetForCurrentView().TryEnterFullScreenMode();
+            }
+            else
+            {
+                ApplicationView.GetForCurrentView().ExitFullScreenMode();
+                IsFullScreen = false;
+            }
+        }
+
+        private void Button_FullScreen_Click(object sender, RoutedEventArgs e)
+        {
+            // Redirect to our shortcut key.
+            AppFullScreenShortcut(null, null);
         }
         #endregion
 

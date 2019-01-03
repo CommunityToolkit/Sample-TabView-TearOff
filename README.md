@@ -46,7 +46,7 @@ Known Issues
 
 3. Dragging into a FullScreen Window is not supported.
 
-    Currently, the hidden TitleBar of a FullScreen app doesn't appear when performing any drag operation.  We could mitigate this in the future by handling dropping the tab in the application content area.
+    Currently, the hidden TitleBar of a FullScreen app doesn't appear when performing any drag operation.  We could mitigate this in the future by detecting the drag entering our window and toggling the visibility of our TabView (ignoring the visibility of the TitleBar from the system in this scenario).
 
 About the Sample
 ----------------

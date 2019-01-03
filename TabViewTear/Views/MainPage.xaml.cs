@@ -240,12 +240,6 @@ namespace TabViewTear.Views
             AppTitleBar.Visibility = Items.Visibility;
         }
 
-        private void MainPage_VisibleBoundsChanged(ApplicationView sender, object args)
-        {
-            // Update Fullscreen from other modes of adjusting view (keyboard shortcuts)
-            IsFullScreen = ApplicationView.GetForCurrentView().IsFullScreenMode;
-        }
-
         private void CoreTitleBar_LayoutMetricsChanged(CoreApplicationViewTitleBar sender, object args)
         {
             // Get the size of the caption controls area and back button 
@@ -259,6 +253,12 @@ namespace TabViewTear.Views
         #endregion
 
         #region Handle FullScreen
+        private void MainPage_VisibleBoundsChanged(ApplicationView sender, object args)
+        {
+            // Update Fullscreen from other modes of adjusting view (keyboard shortcuts)
+            IsFullScreen = ApplicationView.GetForCurrentView().IsFullScreenMode;
+        }
+
         private void AppFullScreenShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         {
             // Toggle FullScreen from F11 Keyboard Shortcut
